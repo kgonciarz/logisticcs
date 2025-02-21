@@ -15,8 +15,8 @@ uploaded_aaa = st.file_uploader("Upload AAA Freight Test File", type=["xlsx"])
 if st.button("Process Files"):
     if uploaded_template and uploaded_quotation and uploaded_aaa:
         # --- Step 2: Read Uploaded Files ---
-df_template = pd.ExcelFile(uploaded_template, engine="openpyxl")
-df_quotation = pd.ExcelFile(uploaded_quotation, engine="openpyxl")
+        df_template = pd.ExcelFile(uploaded_template, engine="openpyxl")
+        df_quotation = pd.ExcelFile(uploaded_quotation, engine="openpyxl")
         df_aaa = pd.read_excel(uploaded_aaa, engine="openpyxl")
 
         # Load relevant sheets
