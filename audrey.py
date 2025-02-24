@@ -18,13 +18,12 @@ if uploaded_file is not None:
     # Load the uploaded file into a Pandas DataFrame
     df_processed = pd.read_excel(uploaded_file)
 
-    # ✅ Check if the AAA Freight Test file exists
+    # Ensure the AAA Freight Test file exists before processing
     if os.path.exists(aaa_file_path):
         df_aaa = pd.read_excel(aaa_file_path)
-        st.success("✅ AAA Freight Test file found! Appending new data.")
     else:
-        st.warning("⚠️ The AAA Freight Test file does not exist! A new file will be created.")
-        df_aaa = pd.DataFrame()  # Create an empty DataFrame
+        st.error("⚠️ The AAA Freight Test file does not exist! Please check the file path.")
+        st.stop()
 
     # ✅ Convert column names to strings before stripping spaces
     df_aaa.columns = df_aaa.columns.astype(str).str.strip()
