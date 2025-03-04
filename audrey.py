@@ -42,7 +42,7 @@ if uploaded_file and template_file:
         for cell in row:
             cell.value = None  # Clear previous values
 
-    # Write the DataFrame into Feuil1, preserving formulas in other sheets
+    # Write the DataFrame into Feuil1, keeping only uploaded data
     for i, row in enumerate(df_uploaded.itertuples(index=False), start=2):
         for j, value in enumerate(row, start=1):
             ws_feuil1.cell(row=i, column=j, value=value)
