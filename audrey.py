@@ -25,10 +25,10 @@ if uploaded_file and template_file:
     # Load uploaded file as a DataFrame
     df_uploaded = pd.read_excel(uploaded_file, sheet_name=0)  # Read first sheet
 
-    # Rename columns based on mapping
+    # Rename columns based on mapping (only apply to existing columns)
     df_uploaded = df_uploaded.rename(columns={k: v for k, v in column_mapping.items() if k in df_uploaded.columns})
 
-    # Ensure columns exist before processing
+    # Ensure "POD" takes "Destination" if available
     if "Destination" in df_uploaded.columns and "POD" in df_uploaded.columns:
         df_uploaded["POD"] = df_uploaded["Destination"].fillna(df_uploaded["POD"])
         df_uploaded.drop(columns=["Destination"], inplace=True)
@@ -36,26 +36,20 @@ if uploaded_file and template_file:
     # Load the template using openpyxl to preserve formulas
     wb = load_workbook(template_file, data_only=False)  # Keep formulas intact
     ws_feuil1 = wb["Feuil1"]
-    ws_feuil2 = wb["Feuil2"]
 
-    # Get column headers from Feuil1
-    headers = [cell.value for cell in ws_feuil1[1] if cell.value]
+    # Retrieve Feuil1 headers
+    headers = [cell.value for cell in ws_feuil1[1] if cell.value is not None]
 
-    # Ensure uploaded data matches the required columns in Feuil1
+    # Match the uploaded data with Feuil1's expected headers
     df_uploaded = df_uploaded.reindex(columns=headers, fill_value="")
 
-    # Clear all data in Feuil1 (excluding headers)
-    for row in ws_feuil1.iter_rows(min_row=2, max_row=ws_feuil1.max_row, min_col=1, max_col=ws_feuil1.max_column):
-        for cell in row:
-            cell.value = None  # Clear previous values
+    # Clear all rows below the headers in Feuil1
+    ws_feuil1.delete_rows(2, ws_feuil1.max_row)
 
     # Write only the uploaded DataFrame into Feuil1
     for i, row in enumerate(df_uploaded.itertuples(index=False), start=2):
         for j, value in enumerate(row, start=1):
             ws_feuil1.cell(row=i, column=j, value=value)
-
-    # Force recalculation of Feuil2 formulas
-    wb.active = ws_feuil2  # Make Feuil2 active to trigger calculations
 
     # Save the updated workbook to a BytesIO buffer
     output = io.BytesIO()
