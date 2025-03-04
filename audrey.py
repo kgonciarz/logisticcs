@@ -37,11 +37,13 @@ if uploaded_file and template_file:
     wb = load_workbook(template_file)
     ws_feuil1 = wb["Feuil1"]
 
-    # Find the first empty row in Feuil1
-    first_empty_row = ws_feuil1.max_row + 1
+    # Clear all data in Feuil1 (excluding headers)
+    for row in ws_feuil1.iter_rows(min_row=2, max_row=ws_feuil1.max_row, min_col=1, max_col=ws_feuil1.max_column):
+        for cell in row:
+            cell.value = None  # Clear previous values
 
-    # Write only the uploaded DataFrame into Feuil1 without clearing existing data
-    for i, row in enumerate(df_uploaded.itertuples(index=False), start=first_empty_row):
+    # Write only the uploaded DataFrame into Feuil1
+    for i, row in enumerate(df_uploaded.itertuples(index=False), start=2):
         for j, value in enumerate(row, start=1):
             ws_feuil1.cell(row=i, column=j, value=value)
 
