@@ -12,7 +12,7 @@ column_mapping = {
     "Lumpsum": "FREIGHT",
     "Currency": "Currency",
     "TOTAL SURCHARGE": "Surcharge",
-    "Destination": "Destination"  # Ensure Destination is included
+    "Destination": "Destination"
 }
 
 st.title("Excel Processing App")
@@ -34,8 +34,9 @@ if uploaded_file and template_file:
         df_uploaded.drop(columns=["Destination"], inplace=True)
 
     # Load the template using openpyxl to preserve formulas
-    wb = load_workbook(template_file)
+    wb = load_workbook(template_file, data_only=False)  # Keep formulas intact
     ws_feuil1 = wb["Feuil1"]
+    ws_feuil2 = wb["Feuil2"]
 
     # Clear all data in Feuil1 (excluding headers)
     for row in ws_feuil1.iter_rows(min_row=2, max_row=ws_feuil1.max_row, min_col=1, max_col=ws_feuil1.max_column):
@@ -47,12 +48,23 @@ if uploaded_file and template_file:
         for j, value in enumerate(row, start=1):
             ws_feuil1.cell(row=i, column=j, value=value)
 
+    # Force recalculation of formulas in Feuil2
+    for row in ws_feuil2.iter_rows():
+        for cell in row:
+            if isinstance(cell.value, str) and cell.value.startswith("="):  # If it's a formula
+                cell.value = cell.value  # Assign back to force recalculation
+
+    # Mark workbook as needing recalculation
+    wb.active = ws_feuil2
+    wb.guess_types = True
+    wb.calculate_dimension()
+
     # Save the updated workbook to a BytesIO buffer
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
 
-    # Provide download option with formulas preserved
+    # Provide download option with formulas recalculating
     st.download_button(
         label="Download Processed File with Formulas",
         data=output,
