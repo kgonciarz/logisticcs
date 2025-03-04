@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import io
+from openpyxl import load_workbook
 
 # Column Mapping
 column_mapping = {
@@ -21,9 +22,8 @@ uploaded_file = st.file_uploader("Upload the received Excel file", type=["xlsx"]
 template_file = st.file_uploader("Upload the template Excel file", type=["xlsx"])
 
 if uploaded_file and template_file:
-    # Load uploaded files
+    # Load uploaded file as a DataFrame
     df_uploaded = pd.read_excel(uploaded_file, sheet_name=0)  # Read first sheet
-    df_template = pd.read_excel(template_file, sheet_name=None, engine='openpyxl', keep_default_na=False)  # Read all sheets including formulas
 
     # Rename columns based on mapping
     df_uploaded = df_uploaded.rename(columns=column_mapping)
@@ -33,14 +33,23 @@ if uploaded_file and template_file:
         df_uploaded["POD"] = df_uploaded["Destination"].fillna(df_uploaded["POD"])
         df_uploaded.drop(columns=["Destination"], inplace=True)
 
-    # Overwrite Feuil1 in the template
-    df_template["Feuil1"] = df_uploaded
+    # Load the template using openpyxl to preserve formulas
+    wb = load_workbook(template_file)
+    ws_feuil1 = wb["Feuil1"]
 
-    # Save updated template to a BytesIO buffer using openpyxl to preserve formulas
+    # Clear existing data in Feuil1 (excluding headers)
+    for row in ws_feuil1.iter_rows(min_row=2, max_row=ws_feuil1.max_row, min_col=1, max_col=ws_feuil1.max_column):
+        for cell in row:
+            cell.value = None  # Clear previous values
+
+    # Write the DataFrame into Feuil1, preserving formulas in other sheets
+    for i, row in enumerate(df_uploaded.itertuples(index=False), start=2):
+        for j, value in enumerate(row, start=1):
+            ws_feuil1.cell(row=i, column=j, value=value)
+
+    # Save the updated workbook to a BytesIO buffer
     output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        for sheet_name, df in df_template.items():
-            df.to_excel(writer, sheet_name=sheet_name, index=False)
+    wb.save(output)
     output.seek(0)
 
     # Provide download option with formulas preserved
