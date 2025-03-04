@@ -10,7 +10,8 @@ column_mapping = {
     "Container": "CONTAINER",
     "Lumpsum": "FREIGHT",
     "Currency": "Currency",
-    "TOTAL SURCHARGE": "Surcharge"
+    "TOTAL SURCHARGE": "Surcharge",
+    "Destination": "Destination"  # Ensure Destination is included
 }
 
 st.title("Excel Processing App")
@@ -27,12 +28,17 @@ if uploaded_file and template_file:
     # Rename columns based on mapping
     df_uploaded = df_uploaded.rename(columns=column_mapping)
 
+    # Apply logic for Port of Discharge (POD) / Destination
+    df_uploaded["Final_POD"] = df_uploaded["Destination"].fillna(df_uploaded["POD"])
+    df_uploaded.drop(columns=["Destination", "POD"], inplace=True)
+    df_uploaded.rename(columns={"Final_POD": "POD"}, inplace=True)
+
     # Overwrite Feuil1 in the template
     df_template["Feuil1"] = df_uploaded
 
-    # Save updated template to a BytesIO buffer
+    # Save updated template to a BytesIO buffer using openpyxl instead of xlsxwriter
     output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
         for sheet_name, df in df_template.items():
             df.to_excel(writer, sheet_name=sheet_name, index=False)
     output.seek(0)
