@@ -12,7 +12,7 @@ column_mapping = {
     "Lumpsum": "FREIGHT",
     "Currency": "Currency",
     "TOTAL SURCHARGE": "Surcharge",
-    "Destination": "Destination"
+    "Destination": "Destination"  # Ensure Destination is included
 }
 
 st.title("Excel Processing App")
@@ -23,10 +23,10 @@ template_file = st.file_uploader("Upload the template Excel file", type=["xlsx"]
 
 if uploaded_file and template_file:
     # Load uploaded file as a DataFrame
-    df_uploaded = pd.read_excel(uploaded_file, sheet_name=0, dtype=str)  # Read first sheet
+    df_uploaded = pd.read_excel(uploaded_file, sheet_name=0)  # Read first sheet
 
-    # Rename columns based on mapping (only those that exist)
-    df_uploaded = df_uploaded.rename(columns={k: v for k, v in column_mapping.items() if k in df_uploaded.columns})
+    # Rename columns based on mapping
+    df_uploaded = df_uploaded.rename(columns=column_mapping)
 
     # Ensure columns exist before processing
     if "Destination" in df_uploaded.columns and "POD" in df_uploaded.columns:
@@ -37,17 +37,11 @@ if uploaded_file and template_file:
     wb = load_workbook(template_file)
     ws_feuil1 = wb["Feuil1"]
 
-    # Clear existing data in Feuil1 (fully resetting the worksheet)
-    ws_feuil1.delete_rows(2, ws_feuil1.max_row)  # Deletes all rows except headers
+    # Find the first empty row in Feuil1
+    first_empty_row = ws_feuil1.max_row + 1
 
-    # Get Feuil1 headers
-    headers = [cell.value for cell in ws_feuil1[1]]
-
-    # Reorder uploaded data to match Feuil1's headers (fill missing columns with empty values)
-    df_uploaded = df_uploaded.reindex(columns=headers, fill_value="")
-
-    # Write the DataFrame into Feuil1
-    for i, row in enumerate(df_uploaded.itertuples(index=False), start=2):
+    # Write only the uploaded DataFrame into Feuil1 without clearing existing data
+    for i, row in enumerate(df_uploaded.itertuples(index=False), start=first_empty_row):
         for j, value in enumerate(row, start=1):
             ws_feuil1.cell(row=i, column=j, value=value)
 
