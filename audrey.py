@@ -3,18 +3,6 @@ import pandas as pd
 import io
 from openpyxl import load_workbook
 
-# Column Mapping
-column_mapping = {
-    "Identifier": "ID",
-    "Port of Loading": "POL",
-    "Port of Discharge": "POD",
-    "Container": "CONTAINER",
-    "Lumpsum": "FREIGHT",
-    "Currency": "Currency",
-    "TOTAL SURCHARGE": "Surcharge",
-    "Destination": "Destination"
-}
-
 st.title("Excel Processing App")
 
 # File uploaders for both received file and template
@@ -22,36 +10,20 @@ uploaded_file = st.file_uploader("Upload the received Excel file", type=["xlsx"]
 template_file = st.file_uploader("Upload the template Excel file", type=["xlsx"])
 
 if uploaded_file and template_file:
-    # Load uploaded file as a DataFrame
-    df_uploaded = pd.read_excel(uploaded_file, sheet_name=0)  # Read first sheet
-
-    # Rename columns based on mapping (only apply to existing columns)
-    df_uploaded = df_uploaded.rename(columns={k: v for k, v in column_mapping.items() if k in df_uploaded.columns})
-
-    # Ensure "POD" takes "Destination" if available
-    if "Destination" in df_uploaded.columns and "POD" in df_uploaded.columns:
-        df_uploaded["POD"] = df_uploaded["Destination"].fillna(df_uploaded["POD"])
-        df_uploaded.drop(columns=["Destination"], inplace=True)
-
-    # Load the template using openpyxl to preserve formulas
-    wb = load_workbook(template_file, data_only=False)  # Keep formulas intact
+    # Load the uploaded file and template
+    df_uploaded = pd.read_excel(uploaded_file, sheet_name=0, header=None)  # Read first sheet without headers
+    wb = load_workbook(template_file)
     ws_feuil1 = wb["Feuil1"]
 
-    # Get headers from Feuil1
-    headers = [cell.value for cell in ws_feuil1[1] if cell.value]
+    # Clear all existing data in Feuil1
+    for row in ws_feuil1.iter_rows(min_row=1, max_row=ws_feuil1.max_row, min_col=1, max_col=ws_feuil1.max_column):
+        for cell in row:
+            cell.value = None
 
-    # Ensure the uploaded data matches the Feuil1 structure
-    df_uploaded = df_uploaded.reindex(columns=headers, fill_value="")
-
-    # Clear all rows **below headers** in Feuil1
-    ws_feuil1.delete_rows(2, ws_feuil1.max_row)
-
-    # Convert DataFrame to list of lists for writing to Excel
-    data_to_write = [headers] + df_uploaded.values.tolist()
-
-    # Append data to Feuil1
-    for row in data_to_write[1:]:  # Exclude headers since they already exist
-        ws_feuil1.append(row)
+    # Copy and paste all data from the uploaded file into Feuil1
+    for i, row in enumerate(df_uploaded.values, start=1):
+        for j, value in enumerate(row, start=1):
+            ws_feuil1.cell(row=i, column=j, value=value)
 
     # Save the updated workbook to a BytesIO buffer
     output = io.BytesIO()
