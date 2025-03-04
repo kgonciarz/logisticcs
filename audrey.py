@@ -28,10 +28,10 @@ if uploaded_file and template_file:
     # Rename columns based on mapping
     df_uploaded = df_uploaded.rename(columns=column_mapping)
 
-    # Apply logic for Port of Discharge (POD) / Destination
-    df_uploaded["Final_POD"] = df_uploaded["Destination"].fillna(df_uploaded["POD"])
-    df_uploaded.drop(columns=["Destination", "POD"], inplace=True)
-    df_uploaded.rename(columns={"Final_POD": "POD"}, inplace=True)
+    # Ensure columns exist before processing
+    if "Destination" in df_uploaded.columns and "POD" in df_uploaded.columns:
+        df_uploaded["POD"] = df_uploaded["Destination"].fillna(df_uploaded["POD"])
+        df_uploaded.drop(columns=["Destination"], inplace=True)
 
     # Overwrite Feuil1 in the template
     df_template["Feuil1"] = df_uploaded
