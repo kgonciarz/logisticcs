@@ -26,10 +26,11 @@ def extract_distinct_combinations(file_path, sheet_name):
     df_cleaned = df_cleaned.dropna(subset=required_columns)
     
     # Ensure all column names are correctly formatted to avoid KeyErrors
-    df_cleaned = df_cleaned.rename(columns=lambda x: x.strip())
+    df_cleaned = df_cleaned.rename(columns=lambda x: x.strip() if isinstance(x, str) else x)
     
-    # Convert to string to avoid datatype mismatches and strip spaces
-    df_cleaned = df_cleaned[required_columns].astype(str).apply(lambda x: x.str.strip())
+    # Convert to string where applicable and strip spaces
+    for col in required_columns:
+        df_cleaned[col] = df_cleaned[col].astype(str).str.strip()
     
     # Drop duplicates to ensure unique row-wise combinations
     df_distinct = df_cleaned.drop_duplicates().reset_index(drop=True)
