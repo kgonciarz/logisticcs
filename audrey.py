@@ -17,22 +17,22 @@ def extract_distinct_combinations(file_path, sheet_name):
     # Reload data using the identified header row
     df_cleaned = pd.read_excel(file_path, sheet_name=sheet_name, skiprows=header_row)
     
-    # Rename columns using the first row as headers and drop the original header row
+    # Set column names explicitly to avoid misalignment
     df_cleaned.columns = df_cleaned.iloc[0]
     df_cleaned = df_cleaned[1:].reset_index(drop=True)
     
-    # Ensure only valid rows are used where all required columns are present in the same row
+    # Ensure that the required columns exist and drop NaN rows
     required_columns = ["Port of Loading", "Port of Discharge", "Container"]
     df_cleaned = df_cleaned.dropna(subset=required_columns)
     
-    # Select relevant columns ensuring values are aligned correctly per row
-    df_selected = df_cleaned[required_columns].copy()
+    # Remove rows where 'Port of Discharge' is not valid for the given 'Port of Loading'
+    df_cleaned = df_cleaned[df_cleaned.apply(lambda row: row["Port of Discharge"] in df_raw[df_raw.index == row.name]["Port of Discharge"].values, axis=1)]
     
     # Convert to string to avoid datatype mismatches and strip spaces
-    df_selected = df_selected.astype(str).apply(lambda x: x.str.strip())
+    df_cleaned = df_cleaned.astype(str).apply(lambda x: x.str.strip())
     
-    # Drop duplicates but only considering rows where all values belong to the same row
-    df_distinct = df_selected.drop_duplicates().reset_index(drop=True)
+    # Drop duplicates to ensure unique row-wise combinations
+    df_distinct = df_cleaned[required_columns].drop_duplicates().reset_index(drop=True)
     
     return df_distinct
 
