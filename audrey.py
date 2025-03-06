@@ -22,13 +22,20 @@ def extract_distinct_combinations(file_path, sheet_name):
     df_cleaned = df_cleaned[1:].reset_index(drop=True)
     
     # Ensure only valid rows are used where all required columns are present in the same row
-    df_cleaned = df_cleaned.dropna(subset=["Port of Loading", "Port of Discharge", "Container"])
+    required_columns = ["Port of Loading", "Port of Discharge", "Container"]
+    df_cleaned = df_cleaned.dropna(subset=required_columns)
     
-    # Selecting the relevant columns from the same row
-    df_selected = df_cleaned[["Port of Loading", "Port of Discharge", "Container"]]
+    # Ensure values are correctly aligned in the same row
+    df_cleaned = df_cleaned[required_columns]
+    
+    # Convert to string to avoid datatype mismatches and strip spaces
+    df_cleaned = df_cleaned.astype(str).apply(lambda x: x.str.strip())
+    
+    # Filter out incorrect or empty values
+    df_cleaned = df_cleaned[(df_cleaned["Port of Loading"] != "") & (df_cleaned["Port of Discharge"] != "")]
     
     # Dropping duplicates to get distinct combinations strictly from the same rows
-    df_distinct = df_selected.drop_duplicates().reset_index(drop=True)
+    df_distinct = df_cleaned.drop_duplicates().reset_index(drop=True)
     
     return df_distinct
 
