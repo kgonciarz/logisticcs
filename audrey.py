@@ -35,6 +35,9 @@ def extract_distinct_combinations(file_path, sheet_name):
     # Drop duplicates to ensure unique row-wise combinations
     df_distinct = df_cleaned.drop_duplicates().reset_index(drop=True)
     
+    # Replace NaN with empty strings to avoid JSON serialization issues
+    df_distinct = df_distinct.fillna("")
+    
     return df_distinct
 
 # Streamlit App
