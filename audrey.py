@@ -35,8 +35,8 @@ def extract_distinct_combinations(file_path, sheet_name):
     # Drop duplicates to ensure unique row-wise combinations
     df_distinct = df_cleaned.drop_duplicates().reset_index(drop=True)
     
-    # Replace NaN with empty strings to avoid JSON serialization issues
-    df_distinct = df_distinct.fillna("").astype(str)
+    # Ensure there are no NaN values in the DataFrame
+    df_distinct = df_distinct.replace({pd.NA: ""}).fillna("")
     
     return df_distinct
 
@@ -48,8 +48,8 @@ if uploaded_file is not None:
     sheet_name = "Detail"  # Ensure correct sheet name
     df_distinct = extract_distinct_combinations(uploaded_file, sheet_name)
     
-    # Ensure no NaN issues before displaying in Streamlit
-    df_distinct = df_distinct.fillna("").astype(str)
+    # Convert DataFrame to JSON-compatible dictionary and back to ensure no NaN issues
+    df_distinct = pd.DataFrame(df_distinct.to_dict())
     
     st.write("### Distinct Combinations")
     st.dataframe(df_distinct)
