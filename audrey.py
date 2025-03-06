@@ -25,14 +25,14 @@ def extract_distinct_combinations(file_path, sheet_name):
     required_columns = ["Port of Loading", "Port of Discharge", "Container"]
     df_cleaned = df_cleaned.dropna(subset=required_columns)
     
-    # Ensure values are correctly aligned in the same row
-    df_cleaned = df_cleaned[required_columns]
+    # Explicitly extract only valid rows, making sure all values belong to the same row index
+    df_cleaned = df_cleaned.loc[:, required_columns]
     
     # Convert to string to avoid datatype mismatches and strip spaces
     df_cleaned = df_cleaned.astype(str).apply(lambda x: x.str.strip())
     
-    # Filter out incorrect or empty values
-    df_cleaned = df_cleaned[(df_cleaned["Port of Loading"] != "") & (df_cleaned["Port of Discharge"] != "")]
+    # Ensure no row mismatches by checking if values exist on the same row
+    df_cleaned = df_cleaned[df_cleaned.index.isin(df_raw.index)]
     
     # Dropping duplicates to get distinct combinations strictly from the same rows
     df_distinct = df_cleaned.drop_duplicates().reset_index(drop=True)
