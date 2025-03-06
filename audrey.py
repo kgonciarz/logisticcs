@@ -21,11 +21,11 @@ def extract_distinct_combinations(file_path, sheet_name):
     df_cleaned.columns = df_cleaned.iloc[0]
     df_cleaned = df_cleaned[1:].reset_index(drop=True)
     
-    # Ensure only valid rows are used where all required columns are present
+    # Ensure only valid rows are used where all required columns are present in the same row
     df_cleaned = df_cleaned.dropna(subset=["Port of Loading", "Port of Discharge", "Container"])
     
-    # Selecting only rows where values belong to the same row index
-    df_selected = df_cleaned.loc[:, ["Port of Loading", "Port of Discharge", "Container"]]
+    # Selecting the relevant columns from the same row
+    df_selected = df_cleaned[["Port of Loading", "Port of Discharge", "Container"]]
     
     # Dropping duplicates to get distinct combinations strictly from the same rows
     df_distinct = df_selected.drop_duplicates().reset_index(drop=True)
