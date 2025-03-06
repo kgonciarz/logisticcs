@@ -35,8 +35,8 @@ def extract_distinct_combinations(file_path, sheet_name):
     # Drop duplicates to ensure unique row-wise combinations
     df_distinct = df_cleaned.drop_duplicates().reset_index(drop=True)
     
-    # Ensure there are no NaN values in the DataFrame
-    df_distinct = df_distinct.replace({pd.NA: ""}).fillna("")
+    # Ensure there are no NaN or problematic values in the DataFrame
+    df_distinct = df_distinct.fillna("").replace({pd.NA: "", "nan": "", "None": ""})
     
     return df_distinct
 
@@ -48,8 +48,8 @@ if uploaded_file is not None:
     sheet_name = "Detail"  # Ensure correct sheet name
     df_distinct = extract_distinct_combinations(uploaded_file, sheet_name)
     
-    # Convert DataFrame to JSON-compatible dictionary and back to ensure no NaN issues
-    df_distinct = pd.DataFrame(df_distinct.to_dict())
+    # Convert DataFrame to ensure JSON-safe structure
+    df_distinct = df_distinct.astype(str).replace({"nan": "", "None": ""})
     
     st.write("### Distinct Combinations")
     st.dataframe(df_distinct)
