@@ -1,45 +1,50 @@
-import streamlit as st
 import pandas as pd
-import io
-from openpyxl import load_workbook
+import streamlit as st
 
-st.title("Excel Processing App (Preserve Formulas in Feuil1 & Feuil2)")
+def extract_distinct_combinations(file_path, sheet_name):
+    # Load the Excel file
+    xls = pd.ExcelFile(file_path)
+    
+    # Load the specified sheet
+    df_raw = xls.parse(sheet_name=sheet_name)
+    
+    # Identify the correct header row dynamically
+    for i, row in df_raw.iterrows():
+        if row.notna().sum() > 5:  # Assuming at least 5 non-null values indicate a header row
+            header_row = i
+            break
+    
+    # Reload data using the identified header row
+    df_cleaned = pd.read_excel(file_path, sheet_name=sheet_name, skiprows=header_row)
+    
+    # Rename columns using the first row as headers and drop the original header row
+    df_cleaned.columns = df_cleaned.iloc[0]
+    df_cleaned = df_cleaned[1:].reset_index(drop=True)
+    
+    # Selecting the relevant columns
+    df_selected = df_cleaned[["Port of Loading", "Port of Discharge", "Container"]]
+    
+    # Dropping duplicates to get distinct combinations
+    df_distinct = df_selected.drop_duplicates().reset_index(drop=True)
+    
+    return df_distinct
 
-# File uploaders for received file & template
-uploaded_file = st.file_uploader("📂 Upload the received Excel file", type=["xlsx"])
-template_file = st.file_uploader("📂 Upload the template Excel file", type=["xlsx"])
+# Streamlit App
+st.title("Extract Distinct Port and Container Combinations")
 
-if uploaded_file and template_file:
-    # ✅ Load uploaded file into Pandas DataFrame (read first sheet without headers)
-    df_uploaded = pd.read_excel(uploaded_file, sheet_name=0, header=None)
-
-    # ✅ Load template file with openpyxl
-    wb = load_workbook(template_file)
-
-    # ✅ Step 1: Clear old data (but keep formulas) in **Feuil1 & Feuil2**
-    for sheet_name in ["Feuil1", "Feuil2"]:  # Process both sheets
-        if sheet_name in wb.sheetnames:
-            ws = wb[sheet_name]
-            for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
-                for cell in row:
-                    if not cell.data_type == "f":  # Only clear non-formula cells
-                        cell.value = None
-
-    # ✅ Step 2: Copy new uploaded data into **Feuil1** (starting from row 2)
-    ws_feuil1 = wb["Feuil1"]
-    for i, row in enumerate(df_uploaded.values, start=2):  # Start from row 2 to keep headers
-        for j, value in enumerate(row, start=1):
-            ws_feuil1.cell(row=i, column=j, value=value)
-
-    # ✅ Step 3: Save updated workbook to a BytesIO buffer
-    output = io.BytesIO()
-    wb.save(output)
-    output.seek(0)
-
-    # ✅ Step 4: Provide a Download Button
+uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx"])
+if uploaded_file is not None:
+    sheet_name = "Detail"  # Change if needed
+    df_distinct = extract_distinct_combinations(uploaded_file, sheet_name)
+    
+    st.write("### Distinct Combinations")
+    st.dataframe(df_distinct)
+    
+    # Provide download option
+    df_distinct.to_excel("distinct_combinations.xlsx", index=False)
     st.download_button(
-        label="📥 Download Processed File with Formulas",
-        data=output,
-        file_name="Processed_Output.xlsx",
+        label="Download Excel File",
+        data=open("distinct_combinations.xlsx", "rb").read(),
+        file_name="distinct_combinations.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
