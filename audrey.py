@@ -36,7 +36,7 @@ def extract_distinct_combinations(file_path, sheet_name):
     df_distinct = df_cleaned.drop_duplicates().reset_index(drop=True)
     
     # Replace NaN with empty strings to avoid JSON serialization issues
-    df_distinct = df_distinct.fillna("")
+    df_distinct = df_distinct.fillna("").astype(str)
     
     return df_distinct
 
@@ -47,6 +47,9 @@ uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx"])
 if uploaded_file is not None:
     sheet_name = "Detail"  # Ensure correct sheet name
     df_distinct = extract_distinct_combinations(uploaded_file, sheet_name)
+    
+    # Ensure no NaN issues before displaying in Streamlit
+    df_distinct = df_distinct.fillna("").astype(str)
     
     st.write("### Distinct Combinations")
     st.dataframe(df_distinct)
