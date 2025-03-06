@@ -21,6 +21,9 @@ def extract_distinct_combinations(file_path, sheet_name):
     df_cleaned.columns = df_cleaned.iloc[0]
     df_cleaned = df_cleaned[1:].reset_index(drop=True)
     
+    # Ensure only valid rows are used where all required columns are present
+    df_cleaned = df_cleaned.dropna(subset=["Port of Loading", "Port of Discharge", "Container"])
+    
     # Selecting the relevant columns
     df_selected = df_cleaned[["Port of Loading", "Port of Discharge", "Container"]]
     
@@ -34,7 +37,7 @@ st.title("Extract Distinct Port and Container Combinations")
 
 uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx"])
 if uploaded_file is not None:
-    sheet_name = "Detail"  # Change if needed
+    sheet_name = "Detail"  # Ensure correct sheet name
     df_distinct = extract_distinct_combinations(uploaded_file, sheet_name)
     
     st.write("### Distinct Combinations")
