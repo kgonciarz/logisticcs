@@ -11,9 +11,20 @@ def process_data(uploaded_file):
     file_rec = file_rec.dropna(subset=['Port of Discharge', 'Destination', 'Port of Loading'], how='all')
     file_rec['Destination'] = file_rec['Destination'].fillna(file_rec['Port of Discharge'])
     
-    port_of_loading = pd.read_excel(r"C:\Users\Klaudia Gonciarz\OneDrive - Cocoasource SA\Documents\Audrey\reference\port_of_loading.xlsx")
-    port_of_discharge = pd.read_excel(r"C:\Users\Klaudia Gonciarz\OneDrive - Cocoasource SA\Documents\Audrey\reference\port_of_discharge.xlsx")
-    detention = pd.read_excel(r"C:\Users\Klaudia Gonciarz\OneDrive - Cocoasource SA\Documents\Audrey\reference\detention.xlsx")
+    port_of_loading = "https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fraw.githubusercontent.com%2Fkgonciarz%2Flogisticcs%2Frefs%2Fheads%2Fmain%2Freference%2Fport_of_loading.xlsx&wdOrigin=BROWSELINK"
+    port_of_discharge = "https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fraw.githubusercontent.com%2Fkgonciarz%2Flogisticcs%2Frefs%2Fheads%2Fmain%2Freference%2Fport_of_discharge.xlsx&wdOrigin=BROWSELINK"
+    detention = "https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fraw.githubusercontent.com%2Fkgonciarz%2Flogisticcs%2Frefs%2Fheads%2Fmain%2Freference%2Fdetention.xlsx&wdOrigin=BROWSELINK"
+
+    @st.cache_data
+def load_reference_files():
+    """Fetch reference files from GitHub."""
+    port_of_loading = pd.read_excel(PORT_OF_LOADING_URL)
+    port_of_discharge = pd.read_excel(PORT_OF_DISCHARGE_URL)
+    detention = pd.read_excel(DETENTION_URL)
+    return port_of_loading, port_of_discharge, detention
+
+# Load the reference files once (cached)
+port_of_loading, port_of_discharge, detention = load_reference_files()
     
     file_rec['Port of Loading'] = file_rec['Port of Loading'].str.upper()
     file_rec['Destination'] = file_rec['Destination'].str.upper()
