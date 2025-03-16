@@ -1,64 +1,64 @@
 import pandas as pd
-import streamlit as st
 
-def extract_distinct_combinations(file_path, sheet_name):
-    # Load the Excel file
-    xls = pd.ExcelFile(file_path)
-    
-    # Load the specified sheet
-    df_raw = xls.parse(sheet_name=sheet_name)
-    
-    # Identify the correct header row dynamically
-    for i, row in df_raw.iterrows():
-        if row.notna().sum() > 5:  # Assuming at least 5 non-null values indicate a header row
-            header_row = i
-            break
-    
-    # Reload data using the identified header row
-    df_cleaned = pd.read_excel(file_path, sheet_name=sheet_name, skiprows=header_row)
-    
-    # Set column names explicitly to avoid misalignment
-    df_cleaned.columns = df_cleaned.iloc[0]
-    df_cleaned = df_cleaned[1:].reset_index(drop=True)
-    
-    # Ensure that the required columns exist and drop NaN rows
-    required_columns = ["Port of Loading", "Port of Discharge", "Container"]
-    df_cleaned = df_cleaned.dropna(subset=required_columns)
-    
-    # Ensure all column names are correctly formatted to avoid KeyErrors
-    df_cleaned = df_cleaned.rename(columns=lambda x: x.strip() if isinstance(x, str) else x)
-    
-    # Convert to string where applicable and strip spaces
-    for col in required_columns:
-        df_cleaned[col] = df_cleaned[col].astype(str).str.strip()
-    
-    # Drop duplicates to ensure unique row-wise combinations
-    df_distinct = df_cleaned.drop_duplicates().reset_index(drop=True)
-    
-    # Ensure there are no NaN or problematic values in the DataFrame
-    df_distinct = df_distinct.fillna("").replace({pd.NA: "", "nan": "", "None": ""})
-    
-    return df_distinct
+file_path = r"C:\Users\Klaudia Gonciarz\OneDrive - Cocoasource SA\Documents\Audrey\Quotation_Q2408BSL00081_HAPAGL_066.xlsx"
+file_rec = pd.read_excel(file_path, sheet_name='Detail', skiprows=17)
+file_rec = file_rec.drop(file_rec.columns[0], axis=1)
 
-# Streamlit App
-st.title("Extract Distinct Port and Container Combinations")
+file_rec = file_rec.dropna(subset=['Port of Discharge', 'Destination', 'Port of Loading'], how='all')
 
-uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx"])
-if uploaded_file is not None:
-    sheet_name = "Detail"  # Ensure correct sheet name
-    df_distinct = extract_distinct_combinations(uploaded_file, sheet_name)
-    
-    # Convert DataFrame to ensure JSON-safe structure
-    df_distinct = df_distinct.astype(str).replace({"nan": "", "None": ""})
-    
-    st.write("### Distinct Combinations")
-    st.dataframe(df_distinct)
-    
-    # Provide download option
-    df_distinct.to_excel("distinct_combinations.xlsx", index=False)
-    st.download_button(
-        label="Download Excel File",
-        data=open("distinct_combinations.xlsx", "rb").read(),
-        file_name="distinct_combinations.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+file_rec['Destination'] = file_rec['Destination'].fillna(file_rec['Port of Discharge'])
+
+file_path1 = r"C:\Users\Klaudia Gonciarz\OneDrive - Cocoasource SA\Documents\Audrey\reference\port_of_loading.xlsx"
+port_of_loading = pd.read_excel(file_path1)
+
+file_path2 = r"C:\Users\Klaudia Gonciarz\OneDrive - Cocoasource SA\Documents\Audrey\reference\port_of_discharge.xlsx"
+port_of_discharge = pd.read_excel(file_path2)
+
+file_rec['Port of Loading'] = file_rec['Port of Loading'].str.upper()
+file_rec['Destination'] = file_rec['Destination'].str.upper()
+port_of_loading['port_of_loading1'] = port_of_loading['port_of_loading1'].str.upper()
+port_of_discharge['port_of_discharge1'] = port_of_discharge['port_of_discharge1'].str.upper()
+
+file_rec = pd.merge(file_rec, port_of_loading, left_on="Port of Loading", right_on="port_of_loading1", how="left")
+file_rec = pd.merge(file_rec, port_of_discharge, left_on="Destination", right_on="port_of_discharge1", how="left")
+
+file_rec['left_container'] = file_rec['Container'].str[:2]
+
+file_rec= file_rec[~((file_rec['port_of_loading2'] == 'x') | (file_rec['port_of_discharge2'] == 'x'))]
+
+final = file_rec[['port_of_loading2', 'port_of_discharge2', 'left_container']].drop_duplicates()
+lumpsum = file_rec[file_rec['Charge Code'] == 'Lumpsum'][['port_of_loading2', 'port_of_discharge2', 'left_container', 'Amount', 'Curr.']]
+surcharge = file_rec[file_rec['Charge Code'] == 'MFR'][['port_of_loading2', 'port_of_discharge2', 'left_container', 'Amount']]
+ets = file_rec[file_rec['Charge Code'] == 'ETS'][['port_of_loading2', 'port_of_discharge2', 'left_container', 'Amount']]
+
+final = pd.merge(final, lumpsum, left_on=['port_of_loading2', 'port_of_discharge2', 'left_container'], right_on=['port_of_loading2', 'port_of_discharge2', 'left_container'], how="left")
+final.rename(columns={'Amount': 'FREIGHT'}, inplace=True)
+final = pd.merge(final, surcharge, left_on=['port_of_loading2', 'port_of_discharge2', 'left_container'], right_on=['port_of_loading2', 'port_of_discharge2', 'left_container'], how="left")
+final.rename(columns={'Amount': 'Surcharge'}, inplace=True)
+final = pd.merge(final, ets, left_on=['port_of_loading2', 'port_of_discharge2', 'left_container'], right_on=['port_of_loading2', 'port_of_discharge2', 'left_container'],how="left")
+
+final['Surcharge'] = final['Surcharge'].fillna(0) + final['Amount'].fillna(0)
+
+file_path3 = r"C:\Users\Klaudia Gonciarz\OneDrive - Cocoasource SA\Documents\Audrey\reference\detention.xlsx"
+detention = pd.read_excel(file_path3)
+final = pd.merge(final, detention, left_on=['port_of_discharge2'], right_on=['POD'],how="left")
+
+final['LINER'] = 'not included'
+final['ALL_IN'] = final.apply(
+    lambda row: row['FREIGHT'] + row['Surcharge']
+    if row['LINER'] == 'not included'
+    else row['FREIGHT'] + row['Surcharge'] + row['LINER'], axis=1
+)
+
+final.drop(columns=['POD', 'Amount'], inplace=True)
+
+final.rename(columns={'port_of_loading2': 'POL',
+                      'port_of_discharge2': 'POD',
+                      'left_container': 'CONTAINER',
+                      'Curr.': 'Currency'}, inplace=True)
+
+final = final[['POL', 'POD', 'CONTAINER', 'FREIGHT', 'LINER', 'Currency', 'Surcharge', 'ALL_IN', 'Detention', 'Demurrage']]
+
+
+
+
