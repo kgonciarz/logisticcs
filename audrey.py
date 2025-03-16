@@ -2,6 +2,22 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
+# Define GitHub raw URLs for reference files
+PORT_OF_LOADING_URL = "https://raw.githubusercontent.com/kgonciarz/logisticcs/main/reference/port_of_loading.xlsx"
+PORT_OF_DISCHARGE_URL = "https://raw.githubusercontent.com/kgonciarz/logisticcs/main/reference/port_of_discharge.xlsx"
+DETENTION_URL = "https://raw.githubusercontent.com/kgonciarz/logisticcs/main/reference/detention.xlsx"
+
+@st.cache_data
+def load_reference_files():
+    """Fetch reference files from GitHub and cache them."""
+    port_of_loading = pd.read_excel(PORT_OF_LOADING_URL)
+    port_of_discharge = pd.read_excel(PORT_OF_DISCHARGE_URL)
+    detention = pd.read_excel(DETENTION_URL)
+    return port_of_loading, port_of_discharge, detention
+
+# Load the reference files once (cached)
+port_of_loading, port_of_discharge, detention = load_reference_files()
+
 def process_data(uploaded_file):
     if uploaded_file is None:
         return None
@@ -11,26 +27,13 @@ def process_data(uploaded_file):
     file_rec = file_rec.dropna(subset=['Port of Discharge', 'Destination', 'Port of Loading'], how='all')
     file_rec['Destination'] = file_rec['Destination'].fillna(file_rec['Port of Discharge'])
     
-    port_of_loading = "https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fraw.githubusercontent.com%2Fkgonciarz%2Flogisticcs%2Frefs%2Fheads%2Fmain%2Freference%2Fport_of_loading.xlsx&wdOrigin=BROWSELINK"
-    port_of_discharge = "https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fraw.githubusercontent.com%2Fkgonciarz%2Flogisticcs%2Frefs%2Fheads%2Fmain%2Freference%2Fport_of_discharge.xlsx&wdOrigin=BROWSELINK"
-    detention = "https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fraw.githubusercontent.com%2Fkgonciarz%2Flogisticcs%2Frefs%2Fheads%2Fmain%2Freference%2Fdetention.xlsx&wdOrigin=BROWSELINK"
-
-    @st.cache_data
-def load_reference_files():
-    """Fetch reference files from GitHub."""
-    port_of_loading = pd.read_excel(PORT_OF_LOADING_URL)
-    port_of_discharge = pd.read_excel(PORT_OF_DISCHARGE_URL)
-    detention = pd.read_excel(DETENTION_URL)
-    return port_of_loading, port_of_discharge, detention
-
-# Load the reference files once (cached)
-port_of_loading, port_of_discharge, detention = load_reference_files()
-    
+    # Standardize column text formatting
     file_rec['Port of Loading'] = file_rec['Port of Loading'].str.upper()
     file_rec['Destination'] = file_rec['Destination'].str.upper()
     port_of_loading['port_of_loading1'] = port_of_loading['port_of_loading1'].str.upper()
     port_of_discharge['port_of_discharge1'] = port_of_discharge['port_of_discharge1'].str.upper()
     
+    # Merge data with reference files
     file_rec = pd.merge(file_rec, port_of_loading, left_on="Port of Loading", right_on="port_of_loading1", how="left")
     file_rec = pd.merge(file_rec, port_of_discharge, left_on="Destination", right_on="port_of_discharge1", how="left")
     
