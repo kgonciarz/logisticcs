@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-def process_data(uploaded_file, port_loading_file, port_discharge_file, detention_file):
+def process_data(uploaded_file):
     if uploaded_file is None:
         return None
     
@@ -11,9 +11,9 @@ def process_data(uploaded_file, port_loading_file, port_discharge_file, detentio
     file_rec = file_rec.dropna(subset=['Port of Discharge', 'Destination', 'Port of Loading'], how='all')
     file_rec['Destination'] = file_rec['Destination'].fillna(file_rec['Port of Discharge'])
     
-    port_of_loading = pd.read_excel(port_loading_file)
-    port_of_discharge = pd.read_excel(port_discharge_file)
-    detention = pd.read_excel(detention_file)
+    port_of_loading = pd.read_excel(r"C:\Users\Klaudia Gonciarz\OneDrive - Cocoasource SA\Documents\Audrey\reference\port_of_loading.xlsx")
+    port_of_discharge = pd.read_excel(r"C:\Users\Klaudia Gonciarz\OneDrive - Cocoasource SA\Documents\Audrey\reference\port_of_discharge.xlsx")
+    detention = pd.read_excel(r"C:\Users\Klaudia Gonciarz\OneDrive - Cocoasource SA\Documents\Audrey\reference\detention.xlsx")
     
     file_rec['Port of Loading'] = file_rec['Port of Loading'].str.upper()
     file_rec['Destination'] = file_rec['Destination'].str.upper()
@@ -68,13 +68,10 @@ def to_excel(df):
 st.title("Excel File Processor")
 
 uploaded_file = st.file_uploader("Upload Quotation Excel File", type=["xlsx"])
-port_loading_file = st.file_uploader("Upload Port of Loading Reference File", type=["xlsx"])
-port_discharge_file = st.file_uploader("Upload Port of Discharge Reference File", type=["xlsx"])
-detention_file = st.file_uploader("Upload Detention Reference File", type=["xlsx"])
 
 if st.button("Process File"):
-    if uploaded_file and port_loading_file and port_discharge_file and detention_file:
-        final_df = process_data(uploaded_file, port_loading_file, port_discharge_file, detention_file)
+    if uploaded_file:
+        final_df = process_data(uploaded_file)
         st.success("File processed successfully!")
         
         st.dataframe(final_df)
@@ -87,4 +84,4 @@ if st.button("Process File"):
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
     else:
-        st.error("Please upload all required files.")
+        st.error("Please upload the required file.")
