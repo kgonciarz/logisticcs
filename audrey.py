@@ -3,7 +3,7 @@ import pandas as pd
 from io import BytesIO
 
 # Define GitHub raw URLs for reference files
-PORT_OF_LOADING_URL = "https://raw.githubusercontent.com/kgonciarz/logisticcs/main/reference/port_of_loading.xlsx"
+PORT_OF_LOADING_URL = "https://raw.githubusercontent.com/kgonciarz/logisticcs/main/reference/port_of_loading_new.xlsx"
 PORT_OF_DISCHARGE_URL = "https://raw.githubusercontent.com/kgonciarz/logisticcs/main/reference/port_of_discharge.xlsx"
 DETENTION_URL = "https://raw.githubusercontent.com/kgonciarz/logisticcs/main/reference/detention.xlsx"
 
