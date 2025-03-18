@@ -38,7 +38,7 @@ def process_data(uploaded_file):
 
     # Standardize column text formatting
     file_rec['Port of Loading'] = file_rec['Port of Loading'].str.upper()
-    file_rec['Destination'] = file_rec['Destination'].str.upper()
+    file_rec['Destination_pod'] = file_rec['Destination_pod'].str.upper()
     port_of_loading['port_of_loading1'] = port_of_loading['port_of_loading1'].str.upper()
     port_of_discharge['port_of_discharge1'] = port_of_discharge['port_of_discharge1'].str.upper()
 
