@@ -44,7 +44,7 @@ def process_data(uploaded_file):
 
     # Merge data with reference files
     file_rec = pd.merge(file_rec, port_of_loading, left_on="Port of Loading", right_on="port_of_loading1", how="left")
-    file_rec = pd.merge(file_rec, port_of_discharge, left_on="Destination", right_on="port_of_discharge1", how="left")
+    file_rec = pd.merge(file_rec, port_of_discharge, left_on="Destination_pod", right_on="port_of_discharge1", how="left")
 
     file_rec['left_container'] = file_rec['Container'].str[:2]
     file_rec = file_rec[~((file_rec['port_of_loading2'] == 'x') | (file_rec['port_of_discharge2'] == 'x'))]
