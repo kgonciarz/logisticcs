@@ -7,7 +7,7 @@ PORT_OF_LOADING_URL = "https://raw.githubusercontent.com/kgonciarz/logisticcs/ma
 PORT_OF_DISCHARGE_URL = "https://raw.githubusercontent.com/kgonciarz/logisticcs/main/reference/port_of_discharge.xlsx"
 DETENTION_URL = "https://raw.githubusercontent.com/kgonciarz/logisticcs/main/reference/detention.xlsx"
 
-@st.cache_data
+@st.cache_data(ttl=3600)
 def load_reference_files():
     """Fetch reference files from GitHub and cache them."""
     port_of_loading = pd.read_excel(PORT_OF_LOADING_URL)
